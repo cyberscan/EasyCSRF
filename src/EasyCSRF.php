@@ -21,8 +21,8 @@ class EasyCSRF {
 	public function generate($key)
 	{
 		$key = $result = preg_replace('/[^a-zA-Z0-9]+/', '', $key);
-
-		$extra = sha1($_SERVER['REMOTE_ADDR'] . $_SERVER['HTTP_USER_AGENT']);
+		$remoteAddr = $serverParams['HTTP_X_FORWARDED_FOR'] ?? $serverParams['REMOTE_ADDR'];
+		$extra = sha1($remoteAddr . $_SERVER['HTTP_USER_AGENT']);
 		// time() is used for token expiration
 		$token = base64_encode(time() . $extra . $this->randomString(32));
 		$this->session->set($this->session_prefix . $key, $token);
@@ -55,7 +55,8 @@ class EasyCSRF {
 			$this->session->set($this->session_prefix . $key, null);
 		}
 
-		if (sha1($_SERVER['REMOTE_ADDR'] . $_SERVER['HTTP_USER_AGENT']) != substr(base64_decode($session_token), 10, 40)) {
+		$remoteAddr = $serverParams['HTTP_X_FORWARDED_FOR'] ?? $serverParams['REMOTE_ADDR'];
+		if (sha1($remoteAddr . $_SERVER['HTTP_USER_AGENT']) != substr(base64_decode($session_token), 10, 40)) {
 			throw new \Exception('Form origin does not match token origin.');
 		}
 
